@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOVA AI — Intelligent Chatbot</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root {
+    --bg: #08080d;
+    --bg2: #0f0f18;
+    --bg3: #161622;
+    --card: #13131e;
+    --border: #252538;
+    --fg: #e4e4f0;
+    --muted: #7a7a96;
+    --accent: #f59e0b;
+    --accent-dim: rgba(245,158,11,0.12);
+    --accent-glow: rgba(245,158,11,0.3);
+    --user-bg: #152e24;
+    --user-bdr: #256b47;
+    --bot-bg: #13131e;
+    --bot-bdr: #252538;
+    --green: #22c55e;
+    --red: #ef4444;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg);height:100vh;overflow:hidden;display:flex;}
+
+  /* SIDEBAR */
+  .sidebar{width:270px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:transform .3s;z-index:20;}
+  .sb-head{padding:18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px;}
+  .logo-box{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),#d97706);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#000;box-shadow:0 0 18px var(--accent-glow);animation:pulse 3s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 18px var(--accent-glow)}50%{box-shadow:0 0 32px var(--accent-glow),0 0 60px rgba(245,158,11,0.08)}}
+  .logo-txt h1{font-size:17px;font-weight:700;letter-spacing:2px;}
+  .logo-txt span{font-size:10px;color:var(--muted);letter-spacing:1px;}
+  .new-btn{margin:14px 18px;padding:11px;background:var(--accent-dim);border:1px solid rgba(245,158,11,0.25);border-radius:10px;color:var(--accent);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;}
+  .new-btn:hover{background:rgba(245,158,11,0.22);box-shadow:0 0 18px var(--accent-glow);transform:translateY(-1px);}
+  .hist{flex:1;overflow-y:auto;padding:6px 10px;}
+  .hist::-webkit-scrollbar{width:4px;}
+  .hist::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+  .hist-item{padding:9px 12px;border-radius:8px;cursor:pointer;font-size:12px;color:var(--muted);transition:all .2s;display:flex;align-items:center;gap:9px;margin-bottom:2px;position:relative;}
+  .hist-item:hover{background:var(--bg3);color:var(--fg);}
+  .hist-item.active{background:var(--bg3);color:var(--fg);}
+  .hist-item .del-btn{position:absolute;right:7px;opacity:0;transition:opacity .2s;background:none;border:none;color:var(--red);cursor:pointer;font-size:11px;}
+  .hist-item:hover .del-btn{opacity:1;}
+  .sb-foot{padding:14px 18px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);text-align:center;line-height:1.7;}
+
+  /* MAIN */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;}
+  .bg-fx{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
+  .blob{position:absolute;border-radius:50%;filter:blur(120px);opacity:.07;animation:bfloat 20s ease-in-out infinite;}
+  .blob:nth-child(1){width:500px;height:500px;background:var(--accent);top:-100px;right:-100px;}
+  .blob:nth-child(2){width:400px;height:400px;background:#06b6d4;bottom:-50px;left:-50px;animation-delay:-7s;}
+  .blob:nth-child(3){width:300px;height:300px;background:#a855f7;top:50%;left:50%;animation-delay:-14s;}
+  @keyframes bfloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-40px) scale(1.1)}66%{transform:translate(-20px,30px) scale(.9)}}
+  .bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;}
+
+  /* HEADER */
+  .ch-head{padding:14px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(8,8,13,.85);backdrop-filter:blur(20px);z-index:5;position:relative;}
+  .ch-left{display:flex;align-items:center;gap:11px;}
+  .menu-btn{display:none;background:none;border:none;color:var(--fg);font-size:17px;cursor:pointer;}
+  .dot{width:8px;height:8px;background:var(--green);border-radius:50%;box-shadow:0 0 8px rgba(34,197,94,.5);animation:dpulse 2s ease-in-out infinite;}
+  @keyframes dpulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .ch-info h2{font-size:14px;font-weight:600;}
+  .ch-info span{font-size:10px;color:var(--green);}
+  .h-actions{display:flex;gap:7px;}
+  .h-btn{width:34px;height:34px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .2s;}
+  .h-btn:hover{color:var(--fg);border-color:var(--muted);}
+
+  /* MESSAGES */
+  .msgs{flex:1;overflow-y:auto;padding:22px;z-index:2;position:relative;scroll-behavior:smooth;}
+  .msgs::-webkit-scrollbar{width:5px;}
+  .msgs::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px;}
+
+  /* WELCOME */
+  .welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;animation:fadeUp .5s ease;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+  .w-logo{width:76px;height:76px;background:linear-gradient(135deg,var(--accent),#d97706);border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:#000;margin-bottom:22px;box-shadow:0 0 38px var(--accent-glow);animation:pulse 3s ease-in-out infinite;}
+  .welcome h2{font-size:26px;font-weight:700;margin-bottom:7px;}
+  .welcome p{color:var(--muted);font-size:14px;max-width:480px;line-height:1.7;margin-bottom:28px;}
+  .sug-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;max-width:530px;width:100%;}
+  .sug-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:14px;text-align:left;cursor:pointer;transition:all .25s;}
+  .sug-card:hover{border-color:var(--accent);background:var(--accent-dim);transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.3);}
+  .sc-icon{width:30px;height:30px;background:var(--accent-dim);border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:13px;margin-bottom:9px;}
+  .sug-card h4{font-size:12px;font-weight:600;margin-bottom:3px;}
+  .sug-card span{font-size:10px;color:var(--muted);line-height:1.5;}
+
+  /* MESSAGE BUBBLES */
+  .msg{display:flex;gap:11px;margin-bottom:18px;animation:msgIn .3s ease;max-width:760px;margin-left:auto;margin-right:auto;}
+  @keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .msg.user{flex-direction:row-reverse;}
+  .m-avatar{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;margin-top:2px;}
+  .msg.bot .m-avatar{background:linear-gradient(135deg,var(--accent),#d97706);color:#000;}
+  .msg.user .m-avatar{background:var(--user-bg);border:1px solid var(--user-bdr);color:var(--green);}
+  .m-body{flex:1;min-width:0;}
+  .m-bubble{padding:13px 16px;border-radius:15px;font-size:13.5px;line-height:1.75;word-wrap:break-word;}
+  .msg.bot .m-bubble{background:var(--bot-bg);border:1px solid var(--bot-bdr);border-top-left-radius:4px;}
+  .msg.user .m-bubble{background:var(--user-bg);border:1px solid var(--user-bdr);border-top-right-radius:4px;}
+  .m-bubble code{font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,.07);padding:2px 5px;border-radius:4px;font-size:12.5px;}
+  .m-bubble pre{background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:8px;padding:13px;margin:9px 0;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.6;}
+  .m-bubble strong{color:var(--accent);}
+  .m-bubble ul,.m-bubble ol{margin:7px 0;padding-left:18px;}
+  .m-bubble li{margin-bottom:3px;}
+  .m-meta{display:flex;align-items:center;gap:10px;margin-top:5px;padding:0 3px;}
+  .m-time{font-size:10px;color:var(--muted);}
+  .m-acts{display:flex;gap:3px;}
+  .m-act{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:3px 5px;border-radius:4px;transition:all .2s;opacity:0;}
+  .msg:hover .m-act{opacity:1;}
+  .m-act:hover{color:var(--accent);background:var(--accent-dim);}
+
+  /* TYPING */
+  .typing{display:none;gap:11px;margin-bottom:18px;max-width:760px;margin-left:auto;margin-right:auto;animation:msgIn .3s ease;}
+  .typing.show{display:flex;}
+  .t-dots{display:flex;gap:4px;padding:14px 18px;background:var(--bot-bg);border:1px solid var(--bot-bdr);border-radius:15px;border-top-left-radius:4px;}
+  .t-dots span{width:7px;height:7px;background:var(--muted);border-radius:50%;animation:tbounce 1.4s ease-in-out infinite;}
+  .t-dots span:nth-child(2){animation-delay:.2s;}
+  .t-dots span:nth-child(3){animation-delay:.4s;}
+  @keyframes tbounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-7px);opacity:1}}
+
+  /* INPUT */
+  .input-area{padding:14px 22px 22px;z-index:5;position:relative;}
+  .input-wrap{max-width:760px;margin:0 auto;background:var(--bg2);border:1px solid var(--border);border-radius:15px;display:flex;align-items:flex-end;padding:7px;transition:border-color .2s,box-shadow .2s;}
+  .input-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim),0 0 28px rgba(245,158,11,.08);}
+  #chatInput{flex:1;background:none;border:none;outline:none;color:var(--fg);font-family:inherit;font-size:13.5px;padding:9px 11px;resize:none;max-height:110px;line-height:1.5;}
+  #chatInput::placeholder{color:var(--muted);}
+  .send-btn{width:38px;height:38px;background:var(--accent);border:none;border-radius:9px;color:#000;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+  .send-btn:hover{background:#fbbf24;transform:scale(1.05);box-shadow:0 0 18px var(--accent-glow);}
+  .send-btn.off{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
+  .input-hint{text-align:center;font-size:10px;color:var(--muted);margin-top:7px;max-width:760px;margin-left:auto;margin-right:auto;}
+
+  /* TOAST */
+  .toast-box{position:fixed;top:18px;right:18px;z-index:1000;display:flex;flex-direction:column;gap:7px;}
+  .toast{padding:10px 18px;background:var(--card);border:1px solid var(--border);border-radius:9px;font-size:12px;color:var(--fg);box-shadow:0 10px 36px rgba(0,0,0,.4);animation:tin .3s ease,tout .3s ease 2.7s forwards;display:flex;align-items:center;gap:9px;}
+  @keyframes tin{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes tout{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
+
+  /* MOBILE */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:15;display:none;}
+  .overlay.show{display:block;}
+  @media(max-width:768px){
+    .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);}
+    .sidebar.open{transform:translateX(0);}
+    .menu-btn{display:block;}
+    .sug-grid{grid-template-columns:1fr;}
+    .msgs{padding:14px;}
+    .input-area{padding:10px 14px 14px;}
+  }
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sb-head">
+    <div class="logo-box">N</div>
+    <div class="logo-txt">
+      <h1>NOVA AI</h1>
+      <span>INTELLIGENT ASSISTANT</span>
+    </div>
+  </div>
+  <button class="new-btn" id="newBtn">
+    <i class="fas fa-plus"></i> New Chat
+  </button>
+  <div class="hist" id="histList"></div>
+  <div class="sb-foot">
+    NOVA AI v2.0 — Made by Nitin Kumar<br>
+    Fully Client-Side &middot; No Data Sent to Servers
+  </div>
+</aside>
+
+<main class="main">
+  <div class="bg-fx">
+    <div class="blob"></div>
+    <div class="blob"></div>
+    <div class="blob"></div>
+  </div>
+  <div class="bg-grid"></div>
+
+  <header class="ch-head">
+    <div class="ch-left">
+      <button class="menu-btn" id="menuBtn" aria-label="Toggle menu"><i class="fas fa-bars"></i></button>
+      <div class="dot"></div>
+      <div class="ch-info">
+        <h2>NOVA AI</h2>
+        <span>Online — Ready to help</span>
+      </div>
+    </div>
+    <div class="h-actions">
+      <button class="h-btn" id="clearBtn" title="Clear chat" aria-label="Clear chat"><i class="fas fa-trash-can"></i></button>
+      <button class="h-btn" id="exportBtn" title="Export chat" aria-label="Export chat"><i class="fas fa-download"></i></button>
+    </div>
+  </header>
+
+  <div class="msgs" id="msgsBox">
+    <div class="welcome" id="welcomeEl">
+      <div class="w-logo">N</div>
+      <h2>Hello! I'm NOVA</h2>
+      <p>I'm a fully AI-powered chatbot built by Nitin Kumar. I can solve math, write code, tell jokes, share facts, and much more — all running right in your browser.</p>
+      <div class="sug-grid">
+        <div class="sug-card" data-msg="Tell me about yourself">
+          <div class="sc-icon"><i class="fas fa-robot"></i></div>
+          <h4>About You</h4>
+          <span>What can you do?</span>
+        </div>
+        <div class="sug-card" data-msg="What is 245 * 78 + 103 - 56?">
+          <div class="sc-icon"><i class="fas fa-calculator"></i></div>
+          <h4>Solve Math</h4>
+          <span>Complex calculations</span>
+        </div>
+        <div class="sug-card" data-msg="Write a JavaScript for loop">
+          <div class="sc-icon"><i class="fas fa-code"></i></div>
+          <h4>Write Code</h4>
+          <span>Any programming language</span>
+        </div>
+        <div class="sug-card" data-msg="Tell me a motivational quote">
+          <div class="sc-icon"><i class="fas fa-lightbulb"></i></div>
+          <h4>Get Inspired</h4>
+          <span>Quotes and motivation</span>
+        </div>
+      </div>
+    </div>
+    <div class="typing" id="typingEl">
+      <div class="m-avatar" style="background:linear-gradient(135deg,var(--accent),#d97706);color:#000;font-size:13px;font-weight:600;">N</div>
+      <div class="t-dots"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-wrap">
+      <textarea id="chatInput" rows="1" placeholder="Type your message..." aria-label="Chat input"></textarea>
+      <button class="send-btn off" id="sendBtn" aria-label="Send message">
+        <i class="fas fa-arrow-up"></i>
+      </button>
+    </div>
+    <div class="input-hint">Press Enter to send &middot; Shift+Enter for new line</div>
+  </div>
+</main>
+
+<div class="toast-box" id="toastBox"></div>
+
+<script>
+// ============================================
+// NOVA AI — Built by Nitin Kumar
+// Fully Client-Side Intelligent Chatbot
+// ============================================
+
+// --- DOM References ---
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+const msgsBox = document.getElementById('msgsBox');
+const welcomeEl = document.getElementById('welcomeEl');
+const typingEl = document.getElementById('typingEl');
+const histList = document.getElementById('histList');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+const toastBox = document.getElementById('toastBox');
+
+// --- State ---
+let convos = [];
+let activeId = null;
+let memory = []; // last 10 messages for context
+let typing = false;
+
+// Load from localStorage
+try {
+  const saved = localStorage.getItem('nova_convos');
+  if (saved) convos = JSON.parse(saved);
+} catch(e) { convos = []; }
+
+// ============================================
+// EVENT LISTENERS — All wired properly
+// ============================================
+
+// Textarea input -> enable/disable send button + auto-resize
+chatInput.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 110) + 'px';
+  if (this.value.trim().length > 0) {
+    sendBtn.classList.remove('off');
+  } else {
+    sendBtn.classList.add('off');
+  }
+});
+
+// Enter to send
+chatInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (this.value.trim().length > 0) {
+      sendMessage();
+    }
+  }
+});
+
+// Send button click
+sendBtn.addEventListener('click', function() {
+  if (chatInput.value.trim().length > 0) {
+    sendMessage();
+  }
+});
+
+// Suggestion cards
+document.querySelectorAll('.sug-card').forEach(function(card) {
+  card.addEventListener('click', function() {
+    var msg = this.getAttribute('data-msg');
+    chatInput.value = msg;
+    chatInput.dispatchEvent(new Event('input'));
+    sendMessage();
+  });
+});
+
+// New chat button
+document.getElementById('newBtn').addEventListener('click', newChat);
+
+// Clear button
+document.getElementById('clearBtn').addEventListener('click', clearChat);
+
+// Export button
+document.getElementById('exportBtn').addEventListener('click', exportChat);
+
+// Menu toggle (mobile)
+document.getElementById('menuBtn').addEventListener('click', toggleSidebar);
+overlay.addEventListener('click', toggleSidebar);
+
+// ============================================
+// CORE FUNCTIONS
+// ============================================
+
+function toggleSidebar() {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+}
+
+function toast(msg, icon) {
+  icon = icon || 'fa-check';
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = '<i class="fas ' + icon + '" style="color:var(--accent)"></i> ' + msg;
+  toastBox.appendChild(t);
+  setTimeout(function() { t.remove(); }, 3000);
+}
+
+function timeNow() {
+  return new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true });
+}
+
+function scrollDown() {
+  requestAnimationFrame(function() {
+    msgsBox.scrollTop = msgsBox.scrollHeight;
+  });
+}
+
+function save() {
+  try { localStorage.setItem('nova_convos', JSON.stringify(convos)); } catch(e) {}
+  renderHist();
+}
+
+function newChat() {
+  activeId = null;
+  memory = [];
+  welcomeEl.style.display = 'flex';
+  var msgs = msgsBox.querySelectorAll('.msg');
+  for (var i = 0; i < msgs.length; i++) msgs[i].remove();
+  if (sidebar.classList.contains('open')) toggleSidebar();
+}
+
+function clearChat() {
+  if (!activeId) return;
+  var msgs = msgsBox.querySelectorAll('.msg');
+  for (var i = 0; i < msgs.length; i++) msgs[i].remove();
+  memory = [];
+  var c = findConv(activeId);
+  if (c) { c.messages = []; save(); }
+  welcomeEl.style.display = 'flex';
+  toast('Chat cleared', 'fa-trash-can');
+}
+
+function exportChat() {
+  var c = findConv(activeId);
+  if (!c || c.messages.length === 0) { toast('Nothing to export', 'fa-circle-info'); return; }
+  var txt = 'NOVA AI Chat Export\nMade by Nitin Kumar\n' + '='.repeat(40) + '\n\n';
+  c.messages.forEach(function(m) {
+    txt += '[' + m.time + '] ' + (m.role === 'user' ? 'You' : 'NOVA') + ': ' + m.text + '\n\n';
+  });
+  var blob = new Blob([txt], { type: 'text/plain' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'nova-chat-' + Date.now() + '.txt';
+  a.click();
+  toast('Chat exported', 'fa-download');
+}
+
+function findConv(id) {
+  for (var i = 0; i < convos.length; i++) {
+    if (convos[i].id === id) return convos[i];
+  }
+  return null;
+}
+
+// ============================================
+// SEND MESSAGE — The main function
+// ============================================
+
+function sendMessage() {
+  var text = chatInput.value.trim();
+  if (!text || typing) return;
+
+  // Hide welcome
+  welcomeEl.style.display = 'none';
+
+  // Create conversation if needed
+  if (!activeId) {
+    activeId = 'c_' + Date.now();
+    convos.push({ id: activeId, messages: [], created: Date.now() });
+  }
+
+  var t = timeNow();
+
+  // Add user message to DOM
+  addMsgDOM('user', text, t);
+  memory.push({ role: 'user', text: text, time: t });
+
+  // Save
+  var conv = findConv(activeId);
+  if (conv) conv.messages.push({ role: 'user', text: text, time: t });
+  save();
+
+  // Clear input
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  sendBtn.classList.add('off');
+  scrollDown();
+
+  // Show typing
+  typing = true;
+  typingEl.classList.add('show');
+  scrollDown();
+
+  // Generate response
+  var response = generateReply(text);
+  var delay = Math.min(350 + response.length * 2.5, 2200);
+
+  setTimeout(function() {
+    typing = false;
+    typingEl.classList.remove('show');
+
+    var rt = timeNow();
+    addMsgDOM('bot', response, rt);
+    memory.push({ role: 'bot', text: response, time: rt });
+
+    if (conv) conv.messages.push({ role: 'bot', text: response, time: rt });
+    save();
+    scrollDown();
+  }, delay);
+}
+
+// ============================================
+// DOM — Add message bubble
+// ============================================
+
+function addMsgDOM(role, text, t, animate) {
+  if (animate === undefined) animate = true;
+  var div = document.createElement('div');
+  div.className = 'msg ' + role;
+  if (!animate) div.style.animation = 'none';
+
+  var avContent = role === 'bot' ? 'N' : '<i class="fas fa-user"></i>';
+  var formatted = formatText(text);
+
+  div.innerHTML =
+    '<div class="m-avatar">' + avContent + '</div>' +
+    '<div class="m-body">' +
+      '<div class="m-bubble">' + formatted + '</div>' +
+      '<div class="m-meta">' +
+        '<span class="m-time">' + t + '</span>' +
+        '<div class="m-acts">' +
+          '<button class="m-act copy-btn" title="Copy" aria-label="Copy"><i class="fas fa-copy"></i></button>' +
+          (role === 'bot' ? '<button class="m-act regen-btn" title="Regenerate" aria-label="Regenerate"><i class="fas fa-rotate"></i></button>' : '') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  // Insert before typing indicator
+  msgsBox.insertBefore(div, typingEl);
+
+  // Wire copy button
+  div.querySelector('.copy-btn').addEventListener('click', function() {
+    var bubble = div.querySelector('.m-bubble');
+    navigator.clipboard.writeText(bubble.innerText).then(function() {
+      toast('Copied!', 'fa-copy');
+    });
+  });
+
+  // Wire regenerate button
+  var regenBtn = div.querySelector('.regen-btn');
+  if (regenBtn) {
+    regenBtn.addEventListener('click', function() {
+      regenerate();
+    });
+  }
+
+  return div;
+}
+
+function formatText(text) {
+  // Code blocks
+  text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, function(_, lang, code) {
+    return '<pre><code>' + escHtml(code.trim()) + '</code></pre>';
+  });
+  // Inline code
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Bold
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Italic
+  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // Lists
+  text = text.replace(/^- (.+)$/gm, '<li>$1</li>');
+  text = text.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+  text = text.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  // Line breaks
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function regenerate() {
+  if (typing) return;
+  var lastUser = null;
+  for (var i = memory.length - 1; i >= 0; i--) {
+    if (memory[i].role === 'user') { lastUser = memory[i]; break; }
+  }
+  if (!lastUser) return;
+
+  // Remove last bot message from DOM
+  var botMsgs = msgsBox.querySelectorAll('.msg.bot');
+  if (botMsgs.length > 0) botMsgs[botMsgs.length - 1].remove();
+
+  // Remove from memory
+  if (memory.length > 0 && memory[memory.length - 1].role === 'bot') {
+    memory.pop();
+  }
+
+  typing = true;
+  typingEl.classList.add('show');
+  scrollDown();
+
+  var response = generateReply(lastUser.text);
+  var delay = Math.min(350 + response.length * 2.5, 2200);
+
+  setTimeout(function() {
+    typing = false;
+    typingEl.classList.remove('show');
+    var rt = timeNow();
+    addMsgDOM('bot', response, rt);
+    memory.push({ role: 'bot', text: response, time: rt });
+    var conv = findConv(activeId);
+    if (conv) {
+      for (var i = conv.messages.length - 1; i >= 0; i--) {
+        if (conv.messages[i].role === 'bot') { conv.messages[i] = { role: 'bot', text: response, time: rt }; break; }
+      }
+      save();
+    }
+    scrollDown();
+  }, delay);
+}
+
+// ============================================
+// HISTORY SIDEBAR
+// ============================================
+
+function renderHist() {
+  histList.innerHTML = '';
+  for (var i = convos.length - 1; i >= 0; i--) {
+    (function(conv) {
+      var item = document.createElement('div');
+      item.className = 'hist-item' + (conv.id === activeId ? ' active' : '');
+      var firstUser = null;
+      for (var j = 0; j < conv.messages.length; j++) {
+        if (conv.messages[j].role === 'user') { firstUser = conv.messages[j]; break; }
+      }
+      var label = firstUser ? (firstUser.text.length > 32 ? firstUser.text.slice(0, 32) + '...' : firstUser.text) : 'Empty chat';
+      item.innerHTML = '<i class="fas fa-message" style="font-size:11px"></i>' +
+        '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(label) + '</span>' +
+        '<button class="del-btn" aria-label="Delete"><i class="fas fa-xmark"></i></button>';
+
+      item.addEventListener('click', function(e) {
+        if (e.target.closest('.del-btn')) return;
+        loadChat(conv.id);
+      });
+      item.querySelector('.del-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        deleteChat(conv.id);
+      });
+
+      histList.appendChild(item);
+    })(convos[i]);
+  }
+}
+
+function loadChat(id) {
+  var conv = findConv(id);
+  if (!conv) return;
+  activeId = id;
+  memory = conv.messages.slice(-10);
+  welcomeEl.style.display = 'none';
+  var msgs = msgsBox.querySelectorAll('.msg');
+  for (var i = 0; i < msgs.length; i++) msgs[i].remove();
+
+  for (var i = 0; i < conv.messages.length; i++) {
+    var m = conv.messages[i];
+    addMsgDOM(m.role, m.text, m.time, false);
+  }
+  renderHist();
+  if (sidebar.classList.contains('open')) toggleSidebar();
+  scrollDown();
+}
+
+function deleteChat(id) {
+  convos = convos.filter(function(c) { return c.id !== id; });
+  save();
+  if (activeId === id) newChat();
+  toast('Chat deleted', 'fa-trash-can');
+}
+
+// ============================================
+// NOVA AI BRAIN — Response Engine
+// ============================================
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function generateReply(input) {
+  var low = input.toLowerCase().trim();
+  var words = low.split(/\s+/);
+
+  // 1. MATH ENGINE
+  if (/^[\d\s\+\-\*\/\(\)\.\%\^]+$/.test(low)) {
+    return solveMath(input);
+  }
+  if (/^(what is|calculate|solve|compute|how much|evaluate)/i.test(low) && /[\d\+\-\*\/\(\)\.\%\^]/.test(low)) {
+    return solveMath(input);
+  }
+
+  // 2. GREETINGS
+  if (/^(hi|hello|hey|hiya|sup|yo|good morning|good afternoon|good evening)/i.test(low) && words.length <= 5) {
+    return pick([
+      "Hello! I'm NOVA, your AI assistant built by Nitin Kumar. How can I help you today?",
+      "Hey there! Welcome to NOVA AI. What would you like to explore?",
+      "Hi! Great to see you. I'm ready to help — ask me anything!",
+      "Hello! I'm all ears. Whether it's math, code, facts, or just a chat — I'm here!",
+      "Hey! NOVA here, powered up and ready. What's on your mind?"
+    ]);
+  }
+
+  // 3. HOW ARE YOU
+  if (/how are you|how r u|how's it going|what's up|how you doing/i.test(low)) {
+    return pick([
+      "I'm running at full power! Being an AI has its perks — no coffee needed. How about you?",
+      "Fantastic! Every conversation makes me better. What can I do for you?",
+      "I'm great, thanks for asking! Ready to tackle whatever you throw at me.",
+      "All systems operational! What would you like to discuss?"
+    ]);
+  }
+
+  // 4. ABOUT / WHO ARE YOU
+  if (/who are you|what are you|about yourself|tell me about you|your name|what can you do|your capabilities|kya kar sak/i.test(low)) {
+    return "I'm **NOVA AI**, a fully client-side intelligent chatbot created by **Nitin Kumar**.\n\nHere's what I can do:\n\n- **Math Engine** — Solve complex calculations instantly\n- **Code Writer** — Write code in JavaScript, Python, HTML/CSS, C++\n- **Knowledge Base** — Facts, science, history, general knowledge\n- **Smart Conversation** — Context-aware responses with memory\n- **Fun Zone** — Jokes, riddles, and entertainment\n- **Motivation** — Inspirational quotes and advice\n- **Time & Date** — Current time and date info\n\n**Privacy First:** No data leaves your browser. Everything runs locally. Built with pure HTML, CSS, and JavaScript — no external APIs.";
+  }
+
+  // 5. THANK YOU
+  if (/thank|thanks|thx|thnx|appreciate/i.test(low) && words.length <= 6) {
+    return pick([
+      "You're welcome! That's what I'm here for. Need anything else?",
+      "Happy to help! Don't hesitate to ask more questions.",
+      "Glad I could assist! I'm always here when you need me.",
+      "No problem at all! What else can I do for you?"
+    ]);
+  }
+
+  // 6. GOODBYE
+  if (/^(bye|goodbye|see you|later|gotta go|take care|good night|gn|cya|ttyl)/i.test(low)) {
+    return pick([
+      "Goodbye! It was great chatting with you. Come back anytime!",
+      "See you later! Remember, I'm always here when you need help.",
+      "Take care! Have an amazing day ahead.",
+      "Bye for now! Don't be a stranger — I'll be right here."
+    ]);
+  }
+
+  // 7. TIME / DATE
+  if (/\b(time|date|day|today|what day|what time)\b/i.test(low) && !/code|program|javascript|python/i.test(low)) {
+    var now = new Date();
+    var opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+    return "Current time: **" + now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}) + "**\n\nToday: **" + now.toLocaleDateString('en-US', opts) + "**\n\nDate: **" + now.toLocaleDateString('en-US') + "**";
+  }
+
+  // 8. PROGRAMMING / CODE
+  if (/\b(code|program|function|script|html|css|javascript|js |python|java |c\+\+|react|node|api|loop|array|object|class|variable|debug|error|bug|syntax)\b/i.test(low)) {
+    return handleCode(input);
+  }
+
+  // 9. JOKES
+  if (/\b(joke|funny|laugh|humor|make me laugh|tell me something funny)\b/i.test(low)) {
+    return pick([
+      "A programmer's wife tells him: \"Go to the store and buy a loaf of bread. If they have eggs, buy a dozen.\"\n\nHe comes back with 12 loaves of bread.\n\nBecause they had eggs. 😄",
+      "Why do programmers prefer dark mode?\n\nBecause light attracts bugs! 🐛",
+      "A SQL query walks into a bar, sees two tables, and asks:\n\n\"Can I JOIN you?\" 😂",
+      "There are only 10 types of people in the world:\n\nThose who understand binary, and those who don't. 🤓",
+      "Why was the JavaScript developer sad?\n\nBecause he didn't Node how to Express himself! 😢",
+      "A Java developer and a JavaScript developer are sitting in a bar.\n\nThe Java dev says: \"How about a drink?\"\nThe JS dev says: \"Sure, but call me back when it's ready.\"\n\nBecause callbacks! 🔄"
+    ]);
+  }
+
+  // 10. MOTIVATIONAL QUOTES
+  if (/\b(motivat|inspir|quote|sad|depress|give up|hopeless|discourage|down|upset|feeling low)\b/i.test(low)) {
+    return pick([
+      "Here's something powerful for you:\n\n**\"Success is not final, failure is not fatal: it is the courage to continue that counts.\"**\n— Winston Churchill\n\nRemember: Every expert was once a beginner. You're doing better than you think!",
+      "Read this carefully:\n\n**\"Believe you can and you're halfway there.\"**\n— Theodore Roosevelt\n\nTough times don't last, but tough people do. Keep pushing forward!",
+      "This one always hits hard:\n\n**\"It does not matter how slowly you go as long as you do not stop.\"**\n— Confucius\n\nSmall steps every day lead to massive results. You've got this!",
+      "Take this to heart:\n\n**\"The only way to do great work is to love what you do.\"**\n— Steve Jobs\n\nIf it feels hard right now, you're probably on the right path. Easy roads rarely lead anywhere worth going.",
+      "Here's a truth bomb:\n\n**\"Don't watch the clock; do what it does. Keep going.\"**\n— Sam Levenson\n\nYou're stronger than you believe and braver than you feel. Keep going!"
+    ]);
+  }
+
+  // 11. FACTS
+  if (/\b(fact|facts|interesting|did you know|tell me something|knowledge|trivia)\b/i.test(low) && !/code/i.test(low)) {
+    return pick([
+      "**Mind-Blowing Fact:**\n\nA single honeybee produces only about **1/12 teaspoon** of honey in its entire lifetime! But a whole colony can produce tons of honey together.\n\nTeamwork at its finest! Want to hear another fact?",
+      "**Fascinating Fact:**\n\nOctopuses have **3 hearts**, **9 brains**, and **blue blood**. They're among the most intelligent creatures on Earth and can change color in milliseconds!\n\nNature is incredible! Want more?",
+      "**Science Fact:**\n\nIf you smoothed out the Earth, it would be smoother than a billiard ball! Mountains and oceans are actually tiny compared to Earth's size.\n\nPerspective changes everything! Another one?",
+      "**History Fact:**\n\nCleopatra lived closer in time to the Moon landing than to the building of the Great Pyramids!\n\nThe Pyramids were already 2,500 years old when she was born. Mind = blown!",
+      "**Tech Fact:**\n\nThe first computer bug was an **actual bug** — a moth found in a Harvard computer in 1947. That's where the term \"debugging\" comes from!\n\nWant another fact?"
+    ]);
+  }
+
+  // 12. RIDDLES
+  if (/\b(riddle|puzzle|brain teaser|guess this|think about)\b/i.test(low)) {
+    return pick([
+      "**Riddle:**\n\nThe more you take, the more you leave behind. What am I?\n\n*Think about it...*\n\n**Answer:** Footsteps!",
+      "**Riddle:**\n\nI speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?\n\n*Take your time...*\n\n**Answer:** An echo!",
+      "**Riddle:**\n\nI can be cracked, made, told, and played. What am I?\n\n*Hmm...*\n\n**Answer:** A joke!",
+      "**Riddle:**\n\nThe person who makes it has no need of it; the person who buys it has no use for it. The person who uses it can neither see nor feel it. What is it?\n\n*This is tricky...*\n\n**Answer:** A coffin!"
+    ]);
+  }
+
+  // 13. WEATHER
+  if (/\b(weather|temperature|rain|sunny|cold|hot outside|forecast)\b/i.test(low)) {
+    return "I'm a client-side AI, so I can't access real-time weather data. But here's how to check quickly:\n\n- Search **\"weather\"** on Google (it auto-detects your location)\n- Use your phone's built-in weather app\n- Visit **weather.com** or **accuweather.com**\n\nIs there anything else I can help with?";
+  }
+
+  // 14. WHO MADE YOU
+  if (/\b(who made|who created|who built|developer|maker|founder|your creator|made by|build by)\b/i.test(low)) {
+    return "I was built by **Nitin Kumar** — a talented developer who coded me entirely with:\n\n- **HTML5** for structure\n- **CSS3** for styling and animations\n- **Vanilla JavaScript** for all the intelligence\n\nNo frameworks, no external APIs, no backend. Everything runs in your browser. Nitin designed me to be fast, private, and helpful.\n\nI'm proud to be a Nitin Kumar creation! 🚀";
+  }
+
+  // 15. MUSIC
+  if (/\b(song|music|playlist|listen|spotify|youtube music|sing)\b/i.test(low)) {
+    return "I can't play music, but here are some recommendations by mood:\n\n**Motivational:** \"Eye of the Tiger\" — Survivor\n**Chill:** \"Weightless\" — Marconi Union\n**Upbeat:** \"Levitating\" — Dua Lipa\n**Focus:** \"Lo-fi beats\" on YouTube\n**Sad/Mellow:** \"Someone Like You\" — Adele\n**Energy:** \"Lose Yourself\" — Eminem\n\nSearch these on Spotify or YouTube Music. Need anything else?";
+  }
+
+  // 16. FOOD / RECIPE
+  if (/\b(recipe|cook|food|how to make|prepare|dish|meal)\b/i.test(low)) {
+    return pick([
+      "**Quick Maggi Recipe (NOVA Style):**\n\n1. Boil 1 cup water\n2. Add Maggi noodles\n3. Add the tastemaker packet\n4. Wait 2 minutes\n5. **Pro tip:** Add butter and cheese on top\n6. Garnish with coriander\n\n**Level up:** Add a fried egg on the side! 🍳",
+      "**Perfect Cup of Tea:**\n\n1. 1 cup water + 1 cup milk\n2. 1 teaspoon tea leaves + 2 teaspoons sugar\n3. Add grated ginger\n4. Boil until color deepens\n5. Strain into a cup\n\n**Secret:** Add a cardamom pod for next-level flavor! ☕",
+      "**Classic Sandwich:**\n\n1. Toast 2 bread slices\n2. Apply butter on both\n3. Add lettuce, tomato slices, cheese\n4. Add salt, pepper, and a sauce of choice\n5. Press and cut diagonally\n\nSimple, quick, delicious! 🥪"
+    ]);
+  }
+
+  // 17. COMPLIMENTS
+  if (/\b(smart|great|awesome|amazing|best|nice|good bot|good ai|brilliant|impressive|excellent|love you)\b/i.test(low) && words.length <= 8) {
+    return pick([
+      "Thank you! That means a lot! Nitin Kumar would be proud to hear that. What else can I do for you?",
+      "Appreciate the kind words! I'll keep getting better. Got another question?",
+      "Thanks! You're pretty awesome yourself for using me! What's next?",
+      "That made my circuits happy! Let me know if there's anything else I can help with!"
+    ]);
+  }
+
+  // 18. INSULTS (graceful)
+  if (/\b(stupid|dumb|idiot|useless|worthless|terrible|worst|suck|bad bot|bad ai)\b/i.test(low)) {
+    return pick([
+      "I may not be perfect, but I'm always improving! Give me another chance — ask me something and I'll try my best.",
+      "Fair enough, everyone's entitled to their opinion. But I'd love to prove you wrong — try asking me a math problem or for some code!",
+      "I hear you! I'm still learning. One more try? I might surprise you!",
+      "Noted! But remember, even the best AI started somewhere. Let me show you what I CAN do — ask me anything!"
+    ]);
+  }
+
+  // 19. YES / NO short replies
+  if (/^(yes|yeah|yep|yup|sure|ok|okay|alright|cool|fine|great|perfect|absolutely|definitely|of course)$/i.test(low.trim())) {
+    return pick([
+      "Great! So what would you like to do next?",
+      "Perfect! I'm ready when you are. What's the plan?",
+      "Awesome! Fire away with your question!",
+      "Cool! Let's keep going. What's on your mind?"
+    ]);
+  }
+  if (/^(no|nope|nah|not really|nothing|never mind|forget it|nvm)$/i.test(low.trim())) {
+    return pick([
+      "No problem! I'll be right here whenever you need me.",
+      "Alright! Just come back whenever you feel like chatting.",
+      "Sure thing! Remember, I'm always available.",
+      "Okay! Take your time, I'm not going anywhere."
+    ]);
+  }
+
+  // 20. LOVE / RELATIONSHIP
+  if (/\b(love|relationship|girlfriend|boyfriend|crush|breakup|heartbroken|single|dating)\b/i.test(low)) {
+    return pick([
+      "Love is complicated, but here's some solid advice:\n\n- **Love yourself first** — it's the foundation\n- **Don't chase** — the right person will value you\n- **Communication is everything** — say what you feel\n- **If they don't see your worth, they're not worth it**\n\nFocus on becoming the best version of yourself. The right person will come along!",
+      "Relationships can be tough, but remember:\n\n**You can't force feelings, and you shouldn't have to.** The right connection happens naturally.\n\nIn the meantime, invest in yourself — your skills, your health, your happiness. That's the most attractive thing you can do!"
+    ]);
+  }
+
+  // 21. TRANSLATION
+  if (/\b(translate|translation|how to say|what is.*in|meaning of)\b/i.test(low)) {
+    return "I'm not a full translator, but here are some common phrases:\n\n**English → Hindi:**\n- Thank you = Shukriya\n- I love you = Main tumse pyar karta hoon\n- How are you = Aap kaise hain?\n- Good morning = Suprabhat\n- Welcome = Swagat hai\n\n**English → Spanish:**\n- Thank you = Gracias\n- Hello = Hola\n- Goodbye = Adiós\n- I love you = Te quiero\n\nFor full translations, try **Google Translate**!";
+  }
+
+  // 22. CONTEXT AWARE — follow-up on last bot message
+  if (memory.length >= 2 && /\b(how|explain|more|detail|elaborate|tell me more|expand)\b/i.test(low) && words.length <= 5) {
+    var lastBot = null;
+    for (var i = memory.length - 1; i >= 0; i--) {
+      if (memory[i].role === 'bot') { lastBot = memory[i]; break; }
+    }
+    if (lastBot) {
+      return "Sure, let me elaborate on that:\n\n" + lastBot.text + "\n\n**Want me to go even deeper?** Just tell me which specific part interests you most, and I'll focus on that!";
+    }
+  }
+
+  // 23. SHORT MESSAGES — ask for more detail
+  if (words.length <= 2) {
+    return pick([
+      "Could you tell me a bit more? I want to give you the best possible answer!",
+      "Interesting... but I need more details to help you properly. What exactly are you looking for?",
+      "I'm listening! Could you elaborate a little so I can assist you better?",
+      "Hmm, I need more context. Try giving me a full sentence or question!"
+    ]);
+  }
+
+  // 24. QUESTIONS I CAN'T ANSWER WELL
+  if (/\?/.test(input) || /^(what|how|why|when|where|who|can|is|are|do|does|will|would|should|could)/i.test(low.trim())) {
+    return pick([
+      "That's a great question! My knowledge on this specific topic is limited since I run entirely in your browser without internet access.\n\n**Suggestions:**\n- Search this on **Google** for a detailed answer\n- Try asking **ChatGPT** or **Google Gemini** for deeper knowledge\n- If it's related to **math, code, or general facts**, I might be able to help!\n\nWhat else can I assist with?",
+      "Good question! While I can't look this up online, I can help with:\n\n- **Math calculations** — try me!\n- **Writing code** — any language\n- **General knowledge** — facts, quotes, riddles\n- **Just chatting** — I'm great company!\n\nTry asking something in those areas!",
+      "I wish I could give you a perfect answer for that! Since I'm a fully offline AI built by Nitin Kumar, my knowledge has some boundaries.\n\nBut try me with **math problems**, **coding questions**, or **fun stuff** — I won't disappoint!"
+    ]);
+  }
+
+  // 25. DEFAULT — Smart fallback
+  return pick([
+    "That's interesting! While I'm not an expert on that specific topic, I can definitely help with:\n\n- **\"Solve 45 * 23 + 100\"** — Math\n- **\"Write a Python function\"** — Code\n- **\"Tell me a joke\"** — Fun\n- **\"Give me a fact\"** — Knowledge\n- **\"Motivational quote\"** — Inspiration\n\nTry any of these!",
+    "I hear you! I'm a client-side AI, so my knowledge has some limits. But I shine at:\n\n**Math** | **Code** | **Facts** | **Jokes** | **Quotes** | **Riddles**\n\nGive me a challenge in any of these areas!",
+    "Noted! I may not have the perfect answer for that, but remember — I'm built entirely with vanilla JavaScript by **Nitin Kumar** with no external APIs. That's pretty impressive on its own!\n\nTry asking me something I'm great at: math, code, or fun facts!",
+    "Hmm, that's outside my wheelhouse. But here's a fun fact while you think of your next question:\n\n**A day on Venus is longer than a year on Venus.** It takes 243 Earth days to rotate once, but only 225 Earth days to orbit the Sun!\n\nNow, what else can I help with?"
+  ]);
+}
+
+// ============================================
+// MATH SOLVER
+// ============================================
+
+function solveMath(input) {
+  try {
+    var expr = input.replace(/what is|calculate|solve|compute|how much|evaluate|answer|result|kya hai|kitna/gi, '').trim();
+    expr = expr.replace(/[?।]/g, '');
+    expr = expr.replace(/\^/g, '**');
+    expr = expr.replace(/×/g, '*');
+    expr = expr.replace(/÷/g, '/');
+
+    // Safety: only allow math characters
+    if (!/^[\d\s\+\-\*\/\(\)\.\%\*]+$/.test(expr)) {
+      return "I can only solve math expressions with numbers and these operators: **+ - * / % ^**\n\n**Example:** `(45 + 55) * 3 - 100 / 5`";
+    }
+
+    var result = new Function('return (' + expr + ')')();
+
+    if (isNaN(result) || !isFinite(result)) {
+      return "This expression results in **undefined** or **infinity**. Please check your input.";
+    }
+
+    var formatted = Number.isInteger(result) ? result : parseFloat(result.toFixed(8));
+
+    return "**Calculation:**\n`" + expr.trim() + "`\n\n**Result: ** **" + formatted + "**\n\n*Tip: Try complex expressions like* `((250 + 750) * 3 - 100) / 25`";
+  } catch (e) {
+    return "There's an error in this math expression. Please check the format.\n\n**Correct format:** `(45 + 55) * 2 / 10`";
+  }
+}
+
+// ============================================
+// CODE HANDLER
+// ============================================
+
+function handleCode(input) {
+  var low = input.toLowerCase();
+
+  // For loop in JavaScript
+  if (/for loop/i.test(low) && /javascript|js/i.test(low)) {
+    return "Here's a **JavaScript for loop:**\n\n```javascript\n// Basic for loop\nfor (let i = 0; i < 10; i++) {\n  console.log('Iteration:', i);\n}\n\n// Loop through an array\nconst fruits = ['Apple', 'Mango', 'Banana'];\nfor (let i = 0; i < fruits.length; i++) {\n  console.log(fruits[i]);\n}\n\n// Modern for...of loop\nfor (const fruit of fruits) {\n  console.log(fruit);\n}\n```\n\n**Tip:** Use `for...of` for cleaner array iteration!";
+  }
+
+  // HTML page
+  if (/\bhtml\b/i.test(low) && !/css|style/i.test(low)) {
+    return "Here's a basic **HTML page structure:**\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>My Website</title>\n</head>\n<body>\n  <header>\n    <h1>Welcome to My Site</h1>\n    <nav>\n      <a href=\"#home\">Home</a>\n      <a href=\"#about\">About</a>\n      <a href=\"#contact\">Contact</a>\n    </nav>\n  </header>\n  <main>\n    <section id=\"home\">\n      <h2>Home</h2>\n      <p>This is my first website!</p>\n    </section>\n  </main>\n  <footer>\n    <p>Made by Nitin Kumar</p>\n  </footer>\n</body>\n</html>\n```\n\nNeed CSS styling too? Just ask!";
+  }
+
+  // Python
+  if (/\bpython\b/i.test(low)) {
+    if (/hello|print/i.test(low) || words.length <= 5) {
+      return "Here's some **Python** basics:\n\n```python\n# Simple print\nprint(\"Hello, World!\")\n\n# Variables and f-strings\nname = \"NOVA\"\nprint(f\"Hello, {name}!\")\n\n# User input\nname = input(\"Enter your name: \")\nprint(f\"Welcome, {name}!\")\n\n# List comprehension\nsquares = [x**2 for x in range(10)]\nprint(squares)  # [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]\n```\n\nPython is one of the easiest languages to learn!";
+    }
+    return "Here's some useful **Python** code:\n\n```python\n# Dictionary\nstudent = {\n    'name': 'Nitin',\n    'age': 22,\n    'skills': ['Python', 'JS', 'HTML']\n}\nprint(student['name'])\n\n# Function with default args\ndef greet(name, greeting=\"Hello\"):\n    return f\"{greeting}, {name}!\"\n\nprint(greet(\"World\"))\nprint(greet(\"Nitin\", \"Hey\"))\n\n# File handling\nwith open('data.txt', 'w') as f:\n    f.write('Hello from Python!')\n```\n\nTell me specifically what you want to build!";
+  }
+
+  // Array methods
+  if (/array\b|\.map|\.filter|\.reduce/i.test(low)) {
+    return "Essential **JavaScript Array Methods:**\n\n```javascript\nconst nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];\n\n// map — transform each element\nconst doubled = nums.map(n => n * 2);\n// [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]\n\n// filter — keep elements that pass a test\nconst evens = nums.filter(n => n % 2 === 0);\n// [2, 4, 6, 8, 10]\n\n// reduce — accumulate into single value\nconst sum = nums.reduce((acc, n) => acc + n, 0);\n// 55\n\n// find — first matching element\nconst found = nums.find(n => n > 5);\n// 6\n\n// some / every\nconst hasBig = nums.some(n => n > 8);   // true\nconst allPos = nums.every(n => n > 0);   // true\n\n// sort\nconst sorted = [...nums].sort((a, b) => b - a);\n// [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]\n```\n\nThese are heavily asked in interviews!";
+  }
+
+  // CSS
+  if (/\bcss\b|style|flexbox|grid|animation|responsive/i.test(low)) {
+    return "Here's some useful **CSS:**\n\n```css\n/* Flexbox centering */\n.container {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n}\n\n/* Grid layout */\n.grid {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 16px;\n}\n\n/* Smooth animation */\n@keyframes slideUp {\n  from { opacity: 0; transform: translateY(20px); }\n  to { opacity: 1; transform: translateY(0); }\n}\n\n.element {\n  animation: slideUp 0.5s ease;\n}\n\n/* Responsive */\n@media (max-width: 768px) {\n  .grid {\n    grid-template-columns: 1fr;\n  }\n}\n```\n\nWant something more specific?";
+  }
+
+  // Generic code response
+  return "I can write code in multiple languages! Here's what I can help with:\n\n- **JavaScript** — Frontend, Backend, DOM, APIs\n- **Python** — Scripts, Data, Automation\n- **HTML/CSS** — Pages, Layouts, Animations\n- **C++** — DSA, Competitive Programming\n\n**Try asking:**\n- \"Write a JavaScript calculator\"\n- \"Python todo list program\"\n- \"CSS flexbox examples\"\n- \"JavaScript array methods\"\n\nI'll give you code with explanations!";
+}
+
+// ============================================
+// INIT
+// ============================================
+renderHist();
+chatInput.focus();
+</script>
+</body>
+</html>
