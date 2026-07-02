@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOVA AI — Web-Powered Chatbot</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{--bg:#08080d;--bg2:#0f0f18;--bg3:#161622;--card:#13131e;--bdr:#252538;--fg:#e4e4f0;--mt:#7a7a96;--ac:#f59e0b;--acd:rgba(245,158,11,.12);--acg:rgba(245,158,11,.3);--ubg:#152e24;--ubd:#256b47;--bbg:#13131e;--bbd:#252538;--gn:#22c55e;--rd:#ef4444}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg);height:100vh;overflow:hidden;display:flex}
+
+/* SIDEBAR */
+.sidebar{width:268px;background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column;flex-shrink:0;transition:transform .3s;z-index:20}
+.sb-hd{padding:16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px}
+.lg-bx{width:36px;height:36px;background:linear-gradient(135deg,var(--ac),#d97706);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#000;box-shadow:0 0 16px var(--acg);animation:lp 3s ease-in-out infinite}
+@keyframes lp{0%,100%{box-shadow:0 0 16px var(--acg)}50%{box-shadow:0 0 28px var(--acg)}}
+.lg-tx h1{font-size:16px;font-weight:700;letter-spacing:2px}
+.lg-tx span{font-size:9px;color:var(--mt);letter-spacing:1px}
+.nbtn{margin:12px 16px;padding:10px;background:var(--acd);border:1px solid rgba(245,158,11,.25);border-radius:9px;color:var(--ac);font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s}
+.nbtn:hover{background:rgba(245,158,11,.22);box-shadow:0 0 16px var(--acg);transform:translateY(-1px)}
+.hlist{flex:1;overflow-y:auto;padding:5px 8px}
+.hlist::-webkit-scrollbar{width:4px}
+.hlist::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:4px}
+.hi{padding:8px 10px;border-radius:7px;cursor:pointer;font-size:11.5px;color:var(--mt);transition:all .2s;display:flex;align-items:center;gap:8px;margin-bottom:2px;position:relative}
+.hi:hover{background:var(--bg3);color:var(--fg)}
+.hi.act{background:var(--bg3);color:var(--fg)}
+.hi .dx{position:absolute;right:6px;opacity:0;transition:opacity .2s;background:none;border:none;color:var(--rd);cursor:pointer;font-size:10px}
+.hi:hover .dx{opacity:1}
+.sb-ft{padding:12px 16px;border-top:1px solid var(--bdr);font-size:9.5px;color:var(--mt);text-align:center;line-height:1.7}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+.bgfx{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.bl{position:absolute;border-radius:50%;filter:blur(120px);opacity:.06;animation:blf 20s ease-in-out infinite}
+.bl:nth-child(1){width:480px;height:480px;background:var(--ac);top:-80px;right:-80px}
+.bl:nth-child(2){width:380px;height:380px;background:#06b6d4;bottom:-40px;left:-40px;animation-delay:-7s}
+.bl:nth-child(3){width:280px;height:280px;background:#a855f7;top:50%;left:50%;animation-delay:-14s}
+@keyframes blf{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-40px) scale(1.1)}66%{transform:translate(-20px,30px) scale(.9)}}
+.bgrd{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.013) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.013) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+
+/* HEADER */
+.chdr{padding:13px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;background:rgba(8,8,13,.85);backdrop-filter:blur(20px);z-index:5;position:relative}
+.chl{display:flex;align-items:center;gap:10px}
+.mbtn{display:none;background:none;border:none;color:var(--fg);font-size:16px;cursor:pointer}
+.sdot{width:7px;height:7px;background:var(--gn);border-radius:50%;box-shadow:0 0 7px rgba(34,197,94,.5);animation:sdp 2s ease-in-out infinite}
+@keyframes sdp{0%,100%{opacity:1}50%{opacity:.5}}
+.chi h2{font-size:13.5px;font-weight:600}
+.chi span{font-size:9.5px;color:var(--gn)}
+.hact{display:flex;gap:6px}
+.hbt{width:32px;height:32px;background:var(--bg3);border:1px solid var(--bdr);border-radius:7px;color:var(--mt);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .2s}
+.hbt:hover{color:var(--fg);border-color:var(--mt)}
+
+/* MESSAGES */
+.mbox{flex:1;overflow-y:auto;padding:20px;z-index:2;position:relative;scroll-behavior:smooth}
+.mbox::-webkit-scrollbar{width:5px}
+.mbox::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:5px}
+
+/* WELCOME */
+.welc{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;animation:wu .5s ease}
+@keyframes wu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.wlg{width:72px;height:72px;background:linear-gradient(135deg,var(--ac),#d97706);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#000;margin-bottom:20px;box-shadow:0 0 34px var(--acg);animation:lp 3s ease-in-out infinite}
+.welc h2{font-size:24px;font-weight:700;margin-bottom:6px}
+.welc p{color:var(--mt);font-size:13px;max-width:480px;line-height:1.7;margin-bottom:24px}
+.sgr{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:510px;width:100%}
+.sgc{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:13px;text-align:left;cursor:pointer;transition:all .25s}
+.sgc:hover{border-color:var(--ac);background:var(--acd);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.3)}
+.sgi{width:28px;height:28px;background:var(--acd);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--ac);font-size:12px;margin-bottom:8px}
+.sgc h4{font-size:11.5px;font-weight:600;margin-bottom:2px}
+.sgc span{font-size:9.5px;color:var(--mt);line-height:1.4}
+
+/* MESSAGE */
+.msg{display:flex;gap:10px;margin-bottom:16px;animation:mi .3s ease;max-width:740px;margin-left:auto;margin-right:auto}
+@keyframes mi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.usr{flex-direction:row-reverse}
+.mav{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;margin-top:2px}
+.msg.bot .mav{background:linear-gradient(135deg,var(--ac),#d97706);color:#000}
+.msg.usr .mav{background:var(--ubg);border:1px solid var(--ubd);color:var(--gn)}
+.mbd{flex:1;min-width:0}
+.mbl{padding:12px 15px;border-radius:14px;font-size:13px;line-height:1.75;word-wrap:break-word}
+.msg.bot .mbl{background:var(--bbg);border:1px solid var(--bbd);border-top-left-radius:4px}
+.msg.usr .mbl{background:var(--ubg);border:1px solid var(--ubd);border-top-right-radius:4px}
+.mbl code{font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,.07);padding:1px 5px;border-radius:4px;font-size:12px}
+.mbl pre{background:rgba(0,0,0,.4);border:1px solid var(--bdr);border-radius:7px;padding:12px;margin:8px 0;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.6}
+.mbl strong{color:var(--ac)}
+.mbl ul,.mbl ol{margin:6px 0;padding-left:16px}
+.mbl li{margin-bottom:2px}
+.mbl a{color:var(--ac);text-decoration:none}
+.mbl a:hover{text-decoration:underline}
+.mmt{display:flex;align-items:center;gap:9px;margin-top:4px;padding:0 3px}
+.mtm{font-size:9.5px;color:var(--mt)}
+.mac{display:flex;gap:3px}
+.mab{background:none;border:none;color:var(--mt);font-size:10px;cursor:pointer;padding:3px 5px;border-radius:4px;transition:all .2s;opacity:0}
+.msg:hover .mab{opacity:1}
+.mab:hover{color:var(--ac);background:var(--acd)}
+.wtag{display:inline-flex;align-items:center;gap:5px;margin-top:9px;padding:4px 9px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.15);border-radius:5px;font-size:10px;color:var(--mt)}
+.wtag i{color:var(--ac);font-size:9px}
+.errtag{display:inline-flex;align-items:center;gap:5px;margin-top:9px;padding:4px 9px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);border-radius:5px;font-size:10px;color:var(--rd)}
+
+/* TYPING */
+.typg{display:none;gap:10px;margin-bottom:16px;max-width:740px;margin-left:auto;margin-right:auto;animation:mi .3s ease}
+.typg.show{display:flex}
+.tdts{display:flex;gap:4px;padding:12px 16px;background:var(--bbg);border:1px solid var(--bbd);border-radius:14px;border-top-left-radius:4px}
+.tdts span{width:6px;height:6px;background:var(--mt);border-radius:50%;animation:tbn 1.4s ease-in-out infinite}
+.tdts span:nth-child(2){animation-delay:.2s}
+.tdts span:nth-child(3){animation-delay:.4s}
+@keyframes tbn{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1}}
+.srcht{display:none;align-items:center;gap:9px;padding:12px 16px;background:var(--bbg);border:1px solid var(--bbd);border-radius:14px;border-top-left-radius:4px;color:var(--ac);font-size:12px;animation:mi .3s ease}
+.srcht.show{display:flex}
+.srcht i{font-size:14px}
+
+/* INPUT */
+.inpa{padding:12px 20px 20px;z-index:5;position:relative}
+.inpw{max-width:740px;margin:0 auto;background:var(--bg2);border:1px solid var(--bdr);border-radius:14px;display:flex;align-items:flex-end;padding:6px;transition:border-color .2s,box-shadow .2s}
+.inpw:focus-within{border-color:var(--ac);box-shadow:0 0 0 3px var(--acd),0 0 24px rgba(245,158,11,.08)}
+#ci{flex:1;background:none;border:none;outline:none;color:var(--fg);font-family:inherit;font-size:13px;padding:8px 10px;resize:none;max-height:100px;line-height:1.5}
+#ci::placeholder{color:var(--mt)}
+.sndb{width:36px;height:36px;background:var(--ac);border:none;border-radius:8px;color:#000;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.sndb:hover{background:#fbbf24;transform:scale(1.05);box-shadow:0 0 16px var(--acg)}
+.sndb.off{opacity:.3;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.inph{text-align:center;font-size:9.5px;color:var(--mt);margin-top:6px;max-width:740px;margin-left:auto;margin-right:auto}
+
+/* TOAST */
+.tbox{position:fixed;top:16px;right:16px;z-index:1000;display:flex;flex-direction:column;gap:6px}
+.tst{padding:9px 16px;background:var(--card);border:1px solid var(--bdr);border-radius:8px;font-size:11.5px;color:var(--fg);box-shadow:0 8px 30px rgba(0,0,0,.4);animation:ti .3s ease,to .3s ease 2.7s forwards;display:flex;align-items:center;gap:8px}
+@keyframes ti{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes to{from{opacity:1}to{opacity:0;transform:translateY(-6px)}}
+
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:15;display:none}
+.ov.show{display:block}
+@media(max-width:768px){.sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.mbtn{display:block}.sgr{grid-template-columns:1fr}.mbox{padding:12px}.inpa{padding:8px 12px 12px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<div class="ov" id="ov"></div>
+
+<aside class="sidebar" id="sb">
+  <div class="sb-hd">
+    <div class="lg-bx">N</div>
+    <div class="lg-tx"><h1>NOVA AI</h1><span>WEB-POWERED ASSISTANT</span></div>
+  </div>
+  <button class="nbtn" id="nb"><i class="fas fa-plus"></i> New Chat</button>
+  <div class="hlist" id="hl"></div>
+  <div class="sb-ft">NOVA AI v3.0 — Made by Nitin Kumar<br>Web Search Enabled &middot; No Data Stored</div>
+</aside>
+
+<main class="main">
+  <div class="bgfx"><div class="bl"></div><div class="bl"></div><div class="bl"></div></div>
+  <div class="bgrd"></div>
+
+  <header class="chdr">
+    <div class="chl">
+      <button class="mbtn" id="mbtn" aria-label="Menu"><i class="fas fa-bars"></i></button>
+      <div class="sdot"></div>
+      <div class="chi"><h2>NOVA AI</h2><span id="stxt">Online — Web Search Active</span></div>
+    </div>
+    <div class="hact">
+      <button class="hbt" id="clb" title="Clear chat" aria-label="Clear"><i class="fas fa-trash-can"></i></button>
+      <button class="hbt" id="exb" title="Export chat" aria-label="Export"><i class="fas fa-download"></i></button>
+    </div>
+  </header>
+
+  <div class="mbox" id="mbox">
+    <div class="welc" id="welc">
+      <div class="wlg">N</div>
+      <h2>Hello! I'm NOVA</h2>
+      <p>Built by Nitin Kumar with real web search. I can look up Wikipedia, check weather, define words, solve math, write code, and answer almost anything.</p>
+      <div class="sgr">
+        <div class="sgc" data-m="What is quantum computing?"><div class="sgi"><i class="fas fa-globe"></i></div><h4>Web Search</h4><span>Look up anything online</span></div>
+        <div class="sgc" data-m="What is 245 * 78 + 103?"><div class="sgi"><i class="fas fa-calculator"></i></div><h4>Solve Math</h4><span>Complex calculations</span></div>
+        <div class="sgc" data-m="Write a JavaScript for loop"><div class="sgi"><i class="fas fa-code"></i></div><h4>Write Code</h4><span>Any programming language</span></div>
+        <div class="sgc" data-m="Weather in New Delhi"><div class="sgi"><i class="fas fa-cloud-sun"></i></div><h4>Live Weather</h4><span>Real-time weather data</span></div>
+      </div>
+    </div>
+    <div class="typg" id="typg">
+      <div class="mav" style="background:linear-gradient(135deg,var(--ac),#d97706);color:#000;font-size:12px;font-weight:600">N</div>
+      <div class="tdts"><span></span><span></span><span></span></div>
+    </div>
+    <div class="srcht" id="srcht">
+      <div class="mav" style="background:linear-gradient(135deg,var(--ac),#d97706);color:#000;font-size:12px;font-weight:600">N</div>
+      <i class="fas fa-magnifying-glass"></i>
+      <span id="srchtxt">Searching the web...</span>
+    </div>
+  </div>
+
+  <div class="inpa">
+    <div class="inpw">
+      <textarea id="ci" rows="1" placeholder="Type your message..." aria-label="Chat input"></textarea>
+      <button class="sndb off" id="sndb" aria-label="Send"><i class="fas fa-arrow-up"></i></button>
+    </div>
+    <div class="inph">Press Enter to send &middot; Shift+Enter for new line &middot; I search the web for you</div>
+  </div>
+</main>
+
+<div class="tbox" id="tbox"></div>
+
+<script>
+// =============================================
+// NOVA AI v3.0 — Made by Nitin Kumar
+// Fully Client-Side with Real Web Search
+// =============================================
+
+var chatInput = document.getElementById('ci');
+var sendBtn = document.getElementById('sndb');
+var mbox = document.getElementById('mbox');
+var welc = document.getElementById('welc');
+var typg = document.getElementById('typg');
+var srcht = document.getElementById('srcht');
+var srchtxt = document.getElementById('srchtxt');
+var hl = document.getElementById('hl');
+var sb = document.getElementById('sb');
+var ov = document.getElementById('ov');
+var tbox = document.getElementById('tbox');
+var stxt = document.getElementById('stxt');
+
+var convos = [];
+var activeId = null;
+var mem = [];
+var busy = false;
+
+// Load saved
+try { var s = localStorage.getItem('nova_c3'); if (s) convos = JSON.parse(s); } catch(e) { convos = []; }
+
+// ====== EVENT LISTENERS ======
+
+chatInput.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+  if (this.value.trim().length > 0) sendBtn.classList.remove('off');
+  else sendBtn.classList.add('off');
+});
+
+chatInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (this.value.trim().length > 0) sendMsg();
+  }
+});
+
+sendBtn.addEventListener('click', function() {
+  if (chatInput.value.trim().length > 0) sendMsg();
+});
+
+document.querySelectorAll('.sgc').forEach(function(c) {
+  c.addEventListener('click', function() {
+    chatInput.value = this.getAttribute('data-m');
+    chatInput.dispatchEvent(new Event('input'));
+    sendMsg();
+  });
+});
+
+document.getElementById('nb').addEventListener('click', newChat);
+document.getElementById('clb').addEventListener('click', clearChat);
+document.getElementById('exb').addEventListener('click', exportChat);
+document.getElementById('mbtn').addEventListener('click', togSB);
+ov.addEventListener('click', togSB);
+
+// ====== UTILITIES ======
+
+function togSB() { sb.classList.toggle('open'); ov.classList.toggle('show'); }
+
+function toast(m, ic) {
+  ic = ic || 'fa-check';
+  var t = document.createElement('div');
+  t.className = 'tst';
+  t.innerHTML = '<i class="fas ' + ic + '" style="color:var(--ac)"></i> ' + m;
+  tbox.appendChild(t);
+  setTimeout(function() { t.remove(); }, 3100);
+}
+
+function tnow() { return new Date().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',hour12:true}); }
+
+function scrll() { requestAnimationFrame(function() { mbox.scrollTop = mbox.scrollHeight; }); }
+
+function save() { try { localStorage.setItem('nova_c3', JSON.stringify(convos)); } catch(e) {} renderH(); }
+
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+function escH(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function fmtTxt(t) {
+  t = t.replace(/```(\w*)\n?([\s\S]*?)```/g, function(_, l, c) { return '<pre><code>' + escH(c.trim()) + '</code></pre>'; });
+  t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+  t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  t = t.replace(/^- (.+)$/gm, '<li>$1</li>');
+  t = t.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+  t = t.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  t = t.replace(/\n/g, '<br>');
+  return t;
+}
+
+// ====== CHAT MANAGEMENT ======
+
+function newChat() {
+  activeId = null; mem = [];
+  welc.style.display = 'flex';
+  var ms = mbox.querySelectorAll('.msg');
+  for (var i = 0; i < ms.length; i++) ms[i].remove();
+  if (sb.classList.contains('open')) togSB();
+}
+
+function clearChat() {
+  if (!activeId) return;
+  var ms = mbox.querySelectorAll('.msg');
+  for (var i = 0; i < ms.length; i++) ms[i].remove();
+  mem = [];
+  var c = findC(activeId);
+  if (c) { c.msgs = []; save(); }
+  welc.style.display = 'flex';
+  toast('Chat cleared', 'fa-trash-can');
+}
+
+function exportChat() {
+  var c = findC(activeId);
+  if (!c || c.msgs.length === 0) { toast('Nothing to export', 'fa-circle-info'); return; }
+  var txt = 'NOVA AI Chat Export\nMade by Nitin Kumar\n' + '='.repeat(40) + '\n\n';
+  c.msgs.forEach(function(m) { txt += '[' + m.time + '] ' + (m.role === 'user' ? 'You' : 'NOVA') + ': ' + m.text + '\n\n'; });
+  var b = new Blob([txt], {type:'text/plain'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(b);
+  a.download = 'nova-chat-' + Date.now() + '.txt';
+  a.click();
+  toast('Chat exported', 'fa-download');
+}
+
+function findC(id) { for (var i = 0; i < convos.length; i++) if (convos[i].id === id) return convos[i]; return null; }
+
+function renderH() {
+  hl.innerHTML = '';
+  for (var i = convos.length - 1; i >= 0; i--) {
+    (function(cv) {
+      var it = document.createElement('div');
+      it.className = 'hi' + (cv.id === activeId ? ' act' : '');
+      var fu = null;
+      for (var j = 0; j < cv.msgs.length; j++) { if (cv.msgs[j].role === 'user') { fu = cv.msgs[j]; break; } }
+      var lb = fu ? (fu.text.length > 28 ? fu.text.slice(0, 28) + '...' : fu.text) : 'Empty chat';
+      it.innerHTML = '<i class="fas fa-message" style="font-size:10px"></i><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escH(lb) + '</span><button class="dx" aria-label="Delete"><i class="fas fa-xmark"></i></button>';
+      it.addEventListener('click', function(e) { if (e.target.closest('.dx')) return; loadC(cv.id); });
+      it.querySelector('.dx').addEventListener('click', function(e) { e.stopPropagation(); delC(cv.id); });
+      hl.appendChild(it);
+    })(convos[i]);
+  }
+}
+
+function loadC(id) {
+  var cv = findC(id);
+  if (!cv) return;
+  activeId = id; mem = cv.msgs.slice(-10);
+  welc.style.display = 'none';
+  var ms = mbox.querySelectorAll('.msg');
+  for (var i = 0; i < ms.length; i++) ms[i].remove();
+  for (var i = 0; i < cv.msgs.length; i++) addDOM(cv.msgs[i].role, cv.msgs[i].text, cv.msgs[i].time, false);
+  renderH();
+  if (sb.classList.contains('open')) togSB();
+  scrll();
+}
+
+function delC(id) {
+  convos = convos.filter(function(c) { return c.id !== id; });
+  save();
+  if (activeId === id) newChat();
+  toast('Chat deleted', 'fa-trash-can');
+}
+
+// ====== ADD MESSAGE TO DOM ======
+
+function addDOM(role, text, t, anim, src) {
+  if (anim === undefined) anim = true;
+  var d = document.createElement('div');
+  d.className = 'msg ' + (role === 'user' ? 'usr' : 'bot');
+  if (!anim) d.style.animation = 'none';
+  var av = role === 'user' ? '<i class="fas fa-user"></i>' : 'N';
+  var html = fmtTxt(text);
+  // Add source tag
+  if (src === 'web') html += '<div class="wtag"><i class="fas fa-globe"></i> Searched from Wikipedia</div>';
+  if (src === 'weather') html += '<div class="wtag"><i class="fas fa-cloud-sun"></i> Live weather from wttr.in</div>';
+  if (src === 'dict') html += '<div class="wtag"><i class="fas fa-book"></i> From Free Dictionary API</div>';
+  if (src === 'error') html += '<div class="errtag"><i class="fas fa-triangle-exclamation"></i> Search failed — using offline response</div>';
+
+  d.innerHTML = '<div class="mav">' + av + '</div><div class="mbd"><div class="mbl">' + html + '</div><div class="mmt"><span class="mtm">' + t + '</span><div class="mac"><button class="mab cpb" title="Copy" aria-label="Copy"><i class="fas fa-copy"></i></button>' + (role !== 'user' ? '<button class="mab rgb" title="Regenerate" aria-label="Regenerate"><i class="fas fa-rotate"></i></button>' : '') + '</div></div></div>';
+  mbox.insertBefore(d, typg);
+
+  d.querySelector('.cpb').addEventListener('click', function() {
+    navigator.clipboard.writeText(d.querySelector('.mbl').innerText).then(function() { toast('Copied!', 'fa-copy'); });
+  });
+  var rb = d.querySelector('.rgb');
+  if (rb) rb.addEventListener('click', regen);
+  return d;
+}
+
+// ====== SEND MESSAGE ======
+
+function sendMsg() {
+  var text = chatInput.value.trim();
+  if (!text || busy) return;
+  welc.style.display = 'none';
+
+  if (!activeId) {
+    activeId = 'c_' + Date.now();
+    convos.push({ id: activeId, msgs: [], created: Date.now() });
+  }
+
+  var t = tnow();
+  addDOM('user', text, t);
+  mem.push({ role: 'user', text: text, time: t });
+  var cv = findC(activeId);
+  if (cv) cv.msgs.push({ role: 'user', text: text, time: t });
+  save();
+
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  sendBtn.classList.add('off');
+  scrll();
+  busy = true;
+
+  // Decide: web search or local
+  processQuery(text);
+}
+
+function processQuery(text) {
+  var low = text.toLowerCase().trim();
+
+  // Math check
+  if (/^[\d\s\+\-\*\/\(\)\.\%\^]+$/.test(low) || (/^(what is|calculate|solve|compute|how much)/i.test(low) && /[\d\+\-\*\/\(\)\.\%\^]/.test(low))) {
+    typg.classList.add('show'); scrll();
+    var r = solveMath(text);
+    setTimeout(function() { finishReply(r, null); }, 600);
+    return;
+  }
+
+  // Weather check
+  if (/\b(weather|temperature|forecast)\b/i.test(low)) {
+    srcht.classList.add('show');
+    srchtxt.textContent = 'Fetching weather data...';
+    scrll();
+    fetchWeather(text).then(function(r) { finishReply(r, 'weather'); }).catch(function() {
+      srcht.classList.remove('show');
+      typg.classList.add('show'); scrll();
+      setTimeout(function() { finishReply(getOfflineReply(text), 'error'); }, 500);
+    });
+    return;
+  }
+
+  // Dictionary check
+  if (/\b(define|definition|meaning of|what does .+ mean|dictionary)\b/i.test(low)) {
+    srcht.classList.add('show');
+    srchtxt.textContent = 'Looking up definition...';
+    scrll();
+    fetchDict(text).then(function(r) { finishReply(r, 'dict'); }).catch(function() {
+      srcht.classList.remove('show');
+      typg.classList.add('show'); scrll();
+      setTimeout(function() { finishReply(getOfflineReply(text), 'error'); }, 500);
+    });
+    return;
+  }
+
+  // Wikipedia search for everything else that looks like a question or topic
+  if (isSearchable(low)) {
+    srcht.classList.add('show');
+    srchtxt.textContent = 'Searching the web...';
+    stxt.textContent = 'Searching...';
+    scrll();
+    fetchWiki(text).then(function(r) {
+      if (r && r.length > 30) finishReply(r, 'web');
+      else {
+        srcht.classList.remove('show');
+        typg.classList.add('show'); scrll();
+        setTimeout(function() { finishReply(getOfflineReply(text), null); }, 400);
+      }
+    }).catch(function() {
+      srcht.classList.remove('show');
+      typg.classList.add('show'); scrll();
+      setTimeout(function() { finishReply(getOfflineReply(text), 'error'); }, 500);
+    });
+    return;
+  }
+
+  // Offline response for greetings, jokes, etc.
+  typg.classList.add('show'); scrll();
+  var r = getOfflineReply(text);
+  setTimeout(function() { finishReply(r, null); }, 500);
+}
+
+function finishReply(text, src) {
+  busy = false;
+  typg.classList.remove('show');
+  srcht.classList.remove('show');
+  stxt.textContent = 'Online — Web Search Active';
+
+  var t = tnow();
+  addDOM('bot', text, t, true, src);
+  mem.push({ role: 'bot', text: text, time: t });
+  var cv = findC(activeId);
+  if (cv) cv.msgs.push({ role: 'bot', text: text, time: t });
+  save();
+  scrll();
+}
+
+function isSearchable(low) {
+  if (low.length < 8) return false;
+  if (/^(hi|hello|hey|yo|sup|ok|okay|yes|no|bye|thanks|thank|cool|nice|great|lol|haha|wow|umm)/i.test(low) && low.length < 20) return false;
+  if (/^(joke|funny|laugh|humor|motivat|inspir|quote|riddle|puzzle)/i.test(low)) return false;
+  if (/\b(code|program|function|script|loop|array|variable|class|debug|error|bug|html|css|javascript|python|java\b|c\+\+)\b/i.test(low)) return false;
+  // It's a question or topic worth searching
+  return true;
+}
+
+// ====== WEB SEARCH: WIKIPEDIA ======
+
+function fetchWiki(query) {
+  return new Promise(function(resolve, reject) {
+    var cleanQ = query.replace(/^(what is|who is|who was|where is|when was|tell me about|explain|describe|search for|look up|find|define|meaning of)\s*/i, '').replace(/[?!.]+$/, '').trim();
+    if (cleanQ.length < 3) { reject(); return; }
+
+    var url = 'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=' + encodeURIComponent(cleanQ) + '&srlimit=1&format=json&origin=*';
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.timeout = 6000;
+    xhr.onload = function() {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        if (data.query && data.query.search && data.query.search.length > 0) {
+          var title = data.query.search[0].title;
+          var snippet = data.query.search[0].snippet;
+          // Clean HTML tags from snippet
+          snippet = snippet.replace(/<span class="searchmatch">/g, '**').replace(/<\/span>/g, '**').replace(/<[^>]+>/g, '');
+          // Now fetch the actual summary
+          fetchWikiSummary(title).then(resolve).catch(function() {
+            resolve('**' + title + '**\n\n' + snippet + '...\n\n[Read more on Wikipedia](https://en.wikipedia.org/wiki/' + encodeURIComponent(title.replace(/ /g, '_')) + ')');
+          });
+        } else {
+          reject();
+        }
+      } catch(e) { reject(); }
+    };
+    xhr.onerror = function() { reject(); };
+    xhr.ontimeout = function() { reject(); };
+    xhr.send();
+  });
+}
+
+function fetchWikiSummary(title) {
+  return new Promise(function(resolve, reject) {
+    var url = 'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title.replace(/ /g, '_'));
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.timeout = 6000;
+    xhr.onload = function() {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        var text = data.extract || '';
+        if (text.length < 30) { reject(); return; }
+        // Trim to reasonable length
+        if (text.length > 1500) text = text.substring(0, 1500) + '...';
+        var link = data.content_urls && data.content_urls.desktop ? data.content_urls.desktop.page : 'https://en.wikipedia.org/wiki/' + encodeURIComponent(title.replace(/ /g, '_'));
+        var img = data.thumbnail ? '\n' : '';
+        var result = '**' + title + '**\n\n' + text + '\n\n[Read more on Wikipedia](' + link + ')';
+        resolve(result);
+      } catch(e) { reject(); }
+    };
+    xhr.onerror = function() { reject(); };
+    xhr.ontimeout = function() { reject(); };
+    xhr.send();
+  });
+}
+
+// ====== WEB SEARCH: WEATHER ======
+
+function fetchWeather(query) {
+  return new Promise(function(resolve, reject) {
+    // Extract city name
+    var city = query.replace(/\b(weather|temperature|forecast|in|at|for|of|what is|current|today|now)\b/gi, '').replace(/[?!.]+$/, '').trim();
+    if (city.length < 2) city = 'New Delhi';
+
+    var url = 'https://wttr.in/' + encodeURIComponent(city) + '?format=j1';
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.timeout = 8000;
+    xhr.onload = function() {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        var cur = data.current_condition[0];
+        var area = data.nearest_area[0];
+        var locName = area.areaName[0].value + ', ' + area.country[0].value;
+        var temp = cur.temp_C;
+        var feels = cur.FeelsLikeC;
+        var hum = cur.humidity;
+        var wind = cur.windspeedKmph;
+        var desc = cur.weatherDesc[0].value;
+        var vis = cur.visibility;
+        var pressure = cur.pressure;
+
+        resolve('**Weather in ' + locName + '**\n\n' +
+          '- **Condition:** ' + desc + '\n' +
+          '- **Temperature:** ' + temp + '°C (Feels like ' + feels + '°C)\n' +
+          '- **Humidity:** ' + hum + '%\n' +
+          '- **Wind Speed:** ' + wind + ' km/h\n' +
+          '- **Visibility:** ' + vis + ' km\n' +
+          '- **Pressure:** ' + pressure + ' mb\n\n' +
+          '*Data from wttr.in*');
+      } catch(e) { reject(); }
+    };
+    xhr.onerror = function() { reject(); };
+    xhr.ontimeout = function() { reject(); };
+    xhr.send();
+  });
+}
+
+// ====== WEB SEARCH: DICTIONARY ======
+
+function fetchDict(query) {
+  return new Promise(function(resolve, reject) {
+    var word = query.replace(/\b(define|definition|meaning of|what does|mean|dictionary)\b/gi, '').replace(/[?!.]+$/, '').trim();
+    if (word.length < 2) { reject(); return; }
+
+    var url = 'https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word);
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.timeout = 6000;
+    xhr.onload = function() {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        if (data.title === 'No Definitions Found') { reject(); return; }
+        var entry = data[0];
+        var wordStr = entry.word;
+        var phonetic = entry.phonetic || (entry.phonetics && entry.phonetics[0] && entry.phonetics[0].text) || '';
+        var result = '**' + wordStr + '** ' + (phonetic ? '(' + phonetic + ')' : '') + '\n\n';
+
+        if (entry.meanings) {
+          entry.meanings.forEach(function(m) {
+            result += '**' + m.partOfSpeech + '**\n';
+            if (m.definitions) {
+              var count = Math.min(m.definitions.length, 3);
+              for (var i = 0; i < count; i++) {
+                result += (i + 1) + '. ' + m.definitions[i].definition + '\n';
+                if (m.definitions[i].example) {
+                  result += '   *"' + m.definitions[i].example + '"*\n';
+                }
+              }
+            }
+            if (m.synonyms && m.synonyms.length > 0) {
+              result += 'Synonyms: ' + m.synonyms.slice(0, 5).join(', ') + '\n';
+            }
+            result += '\n';
+          });
+        }
+        resolve(result.trim());
+      } catch(e) { reject(); }
+    };
+    xhr.onerror = function() { reject(); };
+    xhr.ontimeout = function() { reject(); };
+    xhr.send();
+  });
+}
+
+// ====== MATH SOLVER ======
+
+function solveMath(input) {
+  try {
+    var expr = input.replace(/what is|calculate|solve|compute|how much|evaluate|answer|result/gi, '').trim().replace(/[?!.]/g, '');
+    expr = expr.replace(/\^/g, '**').replace(/×/g, '*').replace(/÷/g, '/');
+    if (!/^[\d\s\+\-\*\/\(\)\.\%\*]+$/.test(expr)) return 'I can only solve expressions with **+ - * / % ^** and numbers.\n\nExample: `(45 + 55) * 3 - 100`';
+    var r = new Function('return (' + expr + ')')();
+    if (isNaN(r) || !isFinite(r)) return 'This expression results in **undefined** or **infinity**.';
+    var f = Number.isInteger(r) ? r : parseFloat(r.toFixed(8));
+    return '**Calculation:**\n`' + expr.trim() + '`\n\n**Result:** **' + f + '**';
+  } catch(e) { return 'Error in math expression. Check the format.\n\nExample: `(100 + 200) * 3 / 5`'; }
+}
+
+// ====== OFFLINE RESPONSES ======
+
+function getOfflineReply(input) {
+  var low = input.toLowerCase().trim();
+  var w = low.split(/\s+/);
+
+  // Greetings
+  if (/^(hi|hello|hey|hiya|sup|yo|good morning|good afternoon|good evening|howdy|greetings)/i.test(low) && w.length <= 6) {
+    return pick([
+      "Hello! I'm NOVA, your AI assistant built by Nitin Kumar. I have web search enabled — ask me about anything and I'll look it up for you!",
+      "Hey there! Welcome to NOVA AI. I can search the web, check weather, define words, solve math, and much more. What would you like to know?",
+      "Hi! Great to see you. I'm connected to the web right now, so feel free to ask me anything — I'll find the answer for you!",
+      "Hello! NOVA here, powered up and ready. I can search Wikipedia, fetch live weather, define words, and do so much more. What's on your mind?"
+    ]);
+  }
+
+  // How are you
+  if (/how are you|how r u|how's it going|what's up/i.test(low)) {
+    return pick([
+      "I'm running at full power with web search active! What can I look up for you?",
+      "Fantastic! I've got internet access now, so I'm more capable than ever. Try asking me something!",
+      "All systems operational! I can search the web, check weather, define words... the list goes on. What do you need?",
+      "I'm great! With web search enabled, there's almost nothing I can't find. Test me!"
+    ]);
+  }
+
+  // About
+  if (/who are you|what are you|about yourself|tell me about you|your name|what can you do|capabilities/i.test(low)) {
+    return "I'm **NOVA AI**, a fully client-side intelligent chatbot created by **Nitin Kumar** with real web search capability.\n\n**What I can do:**\n\n- **Web Search** — Search Wikipedia for any topic\n- **Live Weather** — Real-time weather for any city\n- **Dictionary** — Word definitions, synonyms, examples\n- **Math Engine** — Solve complex calculations\n- **Code Writer** — JavaScript, Python, HTML/CSS code\n- **Fun Zone** — Jokes, riddles, motivational quotes\n- **Conversation** — Context-aware with memory\n\n**Privacy:** No data is stored on any server. Everything runs in your browser. Web searches go directly to public APIs (Wikipedia, wttr.in, DictionaryAPI).";
+  }
+
+  // Who made you
+  if (/who made|who created|who built|developer|maker|founder|your creator|made by/i.test(low)) {
+    return "I was built by **Nitin Kumar** — a talented developer who coded me with:\n\n- **HTML5** for structure\n- **CSS3** for the dark theme and animations\n- **Vanilla JavaScript** for all intelligence\n- **Wikipedia API** for web search\n- **wttr.in** for live weather\n- **Free Dictionary API** for definitions\n\nNo frameworks, no backend, no paid APIs. Everything runs in your browser with real internet search capability. I'm proud to be a Nitin Kumar creation!";
+  }
+
+  // Thank you
+  if (/^(thanks|thank you|thx|thnx|appreciate)/i.test(low) && w.length <= 6) {
+    return pick(["You're welcome! Need anything else?", "Happy to help! Ask me anything else.", "Glad I could help! I'm here whenever you need me.", "No problem! What else can I look up for you?"]);
+  }
+
+  // Goodbye
+  if (/^(bye|goodbye|see you|later|gotta go|take care|good night|gn|cya)/i.test(low)) {
+    return pick(["Goodbye! Come back anytime — I'll be here with web search ready!", "See you later! Remember, I can search the web for you anytime.", "Take care! Have a great day!", "Bye! Don't hesitate to come back when you need answers."]);
+  }
+
+  // Time/Date
+  if (/\b(time|date|day|today|what day)\b/i.test(low) && !/code|program/i.test(low)) {
+    var now = new Date();
+    return "Current time: **" + now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}) + "**\n\nToday: **" + now.toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'}) + "**";
+  }
+
+  // Jokes
+  if (/\b(joke|funny|laugh|humor|make me laugh)\b/i.test(low)) {
+    return pick([
+      "A programmer's wife says: \"Go to the store, buy a loaf of bread. If they have eggs, buy a dozen.\"\n\nHe comes back with 12 loaves.\n\nBecause they had eggs. 😄",
+      "Why do programmers prefer dark mode?\n\nBecause light attracts bugs! 🐛",
+      "A SQL query walks into a bar, sees two tables, and asks:\n\n\"Can I JOIN you?\" 😂",
+      "There are only 10 types of people in the world:\n\nThose who understand binary, and those who don't. 🤓",
+      "Why was the JavaScript developer sad?\n\nBecause he didn't Node how to Express himself! 😢"
+    ]);
+  }
+
+  // Motivational
+  if (/\b(motivat|inspir|quote|sad|depress|give up|hopeless|feeling low|down|upset)\b/i.test(low)) {
+    return pick([
+      "**\"Success is not final, failure is not fatal: it is the courage to continue that counts.\"**\n— Winston Churchill\n\nEvery expert was once a beginner. Keep going!",
+      "**\"Believe you can and you're halfway there.\"**\n— Theodore Roosevelt\n\nTough times don't last, but tough people do!",
+      "**\"It does not matter how slowly you go as long as you do not stop.\"**\n— Confucius\n\nSmall steps every day lead to massive results.",
+      "**\"The only way to do great work is to love what you do.\"**\n— Steve Jobs\n\nIf it feels hard, you're probably on the right path."
+    ]);
+  }
+
+  // Riddles
+  if (/\b(riddle|puzzle|brain teaser|guess this)\b/i.test(low)) {
+    return pick([
+      "**Riddle:** The more you take, the more you leave behind. What am I?\n\n*Think...*\n\n**Answer:** Footsteps!",
+      "**Riddle:** I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?\n\n**Answer:** An echo!",
+      "**Riddle:** I can be cracked, made, told, and played. What am I?\n\n**Answer:** A joke!",
+      "**Riddle:** The person who makes it has no need of it. The person who buys it has no use for it. The person who uses it can neither see nor feel it. What is it?\n\n**Answer:** A coffin!"
+    ]);
+  }
+
+  // Code
+  if (/\b(code|program|function|script|html|css|javascript|js |python|java |c\+\+|react|node|loop|array|object|class|variable|debug|syntax)\b/i.test(low)) {
+    return handleCode(input);
+  }
+
+  // Yes/No short
+  if (/^(yes|yeah|yep|yup|sure|ok|okay|alright|cool|fine|great|perfect)$/i.test(low.trim())) {
+    return pick(["Great! What would you like to know?", "Perfect! Fire away with your question!", "Awesome! What's next?"]);
+  }
+  if (/^(no|nope|nah|not really|nothing|never mind|nvm)$/i.test(low.trim())) {
+    return pick(["No problem! I'm here when you need me.", "Alright! Come back anytime.", "Okay! Take your time."]);
+  }
+
+  // Compliments
+  if (/\b(smart|great|awesome|amazing|best|nice|good bot|good ai|brilliant|impressive|excellent)\b/i.test(low) && w.length <= 8) {
+    return pick(["Thank you! Nitin Kumar would be proud! What else can I help with?", "Appreciate it! Want me to search something for you?", "Thanks! You're awesome too for using me! What's next?"]);
+  }
+
+  // Insults
+  if (/\b(stupid|dumb|idiot|useless|worthless|terrible|worst|suck|bad bot)\b/i.test(low)) {
+    return pick(["I may not be perfect, but I can search the web for you! Give me a real question and I'll prove my worth.", "Fair enough, but try asking me something to search — I might surprise you!", "Noted! But I have web search now — let me show you what I CAN do!"]);
+  }
+
+  // Love
+  if (/\b(love|relationship|girlfriend|boyfriend|crush|breakup|heartbroken)\b/i.test(low)) {
+    return "Love is complex, but here's solid advice:\n\n- **Love yourself first** — it's the foundation\n- **Don't chase** — the right person will value you\n- **Communication is everything**\n- **If they don't see your worth, they're not worth it**\n\nFocus on becoming the best version of yourself!";
+  }
+
+  // Short messages
+  if (w.length <= 2) {
+    return pick(["Could you tell me more? I want to give the best answer!", "Interesting... but I need more details to help you properly.", "I'm listening! Could you elaborate a little?", "Hmm, I need more context. Try a full sentence or question!"]);
+  }
+
+  // Default fallback
+  return pick([
+    "I searched but couldn't find a great match for that. Try rephrasing your question, or ask me something like:\n\n- **\"What is machine learning?\"** — I'll search Wikipedia\n- **\"Weather in London\"** — Live weather data\n- **\"Define serendipity\"** — Dictionary lookup\n- **\"Solve 45 * 23 + 100\"** — Math",
+    "I wasn't able to get a good result for that. Remember, I'm best at:\n\n- **Web Search** — Any topic or question\n- **Weather** — Any city in the world\n- **Dictionary** — Word definitions\n- **Math** — Complex calculations\n- **Code** — Multiple languages\n\nTry one of these!",
+    "That's outside my reach right now. But with web search, I can handle most topics! Try asking a clear question like:\n\n- \"Explain blockchain technology\"\n- \"Who is Elon Musk?\"\n- \"Weather in Tokyo\"\n- \"Define ephemeral\""
+  ]);
+}
+
+// ====== CODE HANDLER ======
+
+function handleCode(input) {
+  var low = input.toLowerCase();
+  if (/for loop/i.test(low) && /javascript|js/i.test(low)) {
+    return "Here's a **JavaScript for loop:**\n\n```javascript\n// Basic for loop\nfor (let i = 0; i < 10; i++) {\n  console.log('Iteration:', i);\n}\n\n// Loop through array\nconst fruits = ['Apple', 'Mango', 'Banana'];\nfor (let i = 0; i < fruits.length; i++) {\n  console.log(fruits[i]);\n}\n\n// Modern for...of\nfor (const fruit of fruits) {\n  console.log(fruit);\n}\n```\n\n**Tip:** Use `for...of` for cleaner array iteration!";
+  }
+  if (/\bhtml\b/i.test(low) && !/css|style/i.test(low)) {
+    return "Here's a basic **HTML page:**\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>My Website</title>\n</head>\n<body>\n  <header>\n    <h1>Welcome</h1>\n    <nav>\n      <a href=\"#home\">Home</a>\n      <a href=\"#about\">About</a>\n    </nav>\n  </header>\n  <main>\n    <section id=\"home\">\n      <h2>Home</h2>\n      <p>Built by Nitin Kumar</p>\n    </section>\n  </main>\n</body>\n</html>\n```\n\nNeed CSS too? Just ask!";
+  }
+  if (/\bpython\b/i.test(low)) {
+    return "Here's some **Python:**\n\n```python\n# Variables and f-strings\nname = \"NOVA\"\nprint(f\"Hello, {name}!\")\n\n# List comprehension\nsquares = [x**2 for x in range(10)]\nprint(squares)\n\n# Function\ndef greet(name, greeting=\"Hello\"):\n    return f\"{greeting}, {name}!\"\n\nprint(greet(\"World\"))\nprint(greet(\"Nitin\", \"Hey\"))\n\n# Dictionary\nstudent = {\n    'name': 'Nitin',\n    'age': 22,\n    'skills': ['Python', 'JS']\n}\n```\n\nTell me what specifically you want to build!";
+  }
+  if (/array|\.map|\.filter|\.reduce/i.test(low)) {
+    return "**JavaScript Array Methods:**\n\n```javascript\nconst nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];\n\n// map — transform\ndoubled = nums.map(n => n * 2);\n\n// filter — condition\nevens = nums.filter(n => n % 2 === 0);\n\n// reduce — accumulate\nsum = nums.reduce((a, n) => a + n, 0);\n\n// find\nfound = nums.find(n => n > 5);\n\n// some / every\nhasBig = nums.some(n => n > 8);\nallPos = nums.every(n => n > 0);\n```\n\nThese are heavily asked in interviews!";
+  }
+  if (/\bcss\b|flexbox|grid|animation|responsive/i.test(low)) {
+    return "**Useful CSS:**\n\n```css\n/* Flexbox centering */\n.container {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n}\n\n/* Grid layout */\n.grid {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 16px;\n}\n\n/* Animation */\n@keyframes fadeUp {\n  from { opacity: 0; transform: translateY(20px); }\n  to { opacity: 1; transform: translateY(0); }\n}\n\n/* Responsive */\n@media (max-width: 768px) {\n  .grid { grid-template-columns: 1fr; }\n}\n```\n\nWant something more specific?";
+  }
+  return "I can write code in multiple languages!\n\n- **JavaScript** — Frontend, Backend, DOM\n- **Python** — Scripts, Data, Automation\n- **HTML/CSS** — Pages, Layouts, Animations\n- **C++** — DSA, Competitive Programming\n\n**Try:** \"Write a Python todo list\" or \"CSS flexbox examples\"";
+}
+
+// ====== REGENERATE ======
+
+function regen() {
+  if (busy) return;
+  var lastUser = null;
+  for (var i = mem.length - 1; i >= 0; i--) { if (mem[i].role === 'user') { lastUser = mem[i]; break; } }
+  if (!lastUser) return;
+
+  var bms = mbox.querySelectorAll('.msg.bot');
+  if (bms.length > 0) bms[bms.length - 1].remove();
+  if (mem.length > 0 && mem[mem.length - 1].role === 'bot') mem.pop();
+
+  busy = true;
+  processQuery(lastUser.text);
+}
+
+// ====== INIT ======
+renderH();
+chatInput.focus();
+</script>
+</body>
+</html>
